@@ -188,39 +188,51 @@ Optional parameters:
 
 ### XMPP - `xmpp`
 
-Requires parameters:
+Requires extras, install like this: `pip install ntfy[xmpp]`.
 
-:   -   `jid`
-    -   `password`
-    -   `recipient`
+Configure via environment variables:
 
-Optional parameters
+``` shell
+export NTFY_XMPP_USER="user@jabber.ru"
+export NTFY_XMPP_PASSWORD="secret"
+export NTFY_XMPP_RECIPIENT="recipient@jabber.ru"
+ntfy -b xmpp send "Hello!"
+```
+
+Or via config file:
+
+``` yaml
+xmpp:
+    jid: "user@jabber.ru"
+    password: "secret"
+    recipient: "recipient@jabber.ru"
+```
+
+Optional parameters:
 
 :   -   `hostname` (if not from jid)
     -   `port`
     -   `path_to_certs`
     -   `mtype`
 
-Requires extras, install like this: `pip install ntfy[xmpp]`.
-
-To verify the SSL certificates offered by a server: path_to_certs =
-\"path/to/ca/cert\"
-
-Without dnspython library installed, you will need to specify the server
-hostname if it doesn\'t match the jid.
-
-Specify port if other than 5222. NOTE: Ignored without specified
-hostname
-
-NOTE: Google Hangouts doesn\'t support XMPP since 2017
-
 ### [Telegram](https://telegram.org) - `telegram`
 
 Requires extras, install like this: `pip install ntfy[telegram]`.
 
-Requires `ntfy` to be installed as `ntfy[telegram]`. This backend is
-configured the first time you will try to use it:
-`ntfy -b telegram send "Telegram configured for ntfy"`.
+Configure via environment variables:
+
+``` shell
+export NTFY_TELEGRAM_TOKEN="123456:ABC-DEF..."
+export NTFY_TELEGRAM_CHAT_ID="your-chat-id"
+export NTFY_SOCKS_PROXY="socks5://user:password@host:port"  # optional
+ntfy -b telegram send "Hello!"
+```
+
+To get your `chat_id`, message your bot on Telegram, then run:
+
+``` shell
+curl -s "https://api.telegram.org/bot${NTFY_TELEGRAM_TOKEN}/getUpdates" | python3 -m json.tool
+```
 
 ### [Pushjet](https://pushjet.io/) - `pushjet`
 
