@@ -8,8 +8,8 @@ deps = ['requests', 'ruamel.yaml', 'appdirs']
 extra_deps = {
     ':sys_platform == "win32"': ['pywin32'],
     ':sys_platform == "darwin"': ['pyobjc-core', 'pyobjc'],
-    'xmpp': ['sleekxmpp', 'dnspython3'],
-    'telegram': ['telegram-send'],
+    'xmpp': ['slixmpp', 'aiodns'],
+    'telegram': ['pyTelegramBotAPI', 'requests[socks]'],
     'instapush': ['instapush'],
     'emoji': ['emoji >= 1.6.2'],
     'pid':['psutil'],
@@ -17,7 +17,7 @@ extra_deps = {
     'rocketchat':['rocketchat-API'],
     'matrix':['matrix_client'],
 }
-test_deps = ['mock', 'sleekxmpp', 'emoji', 'psutil']
+test_deps = ['mock', 'slixmpp', 'emoji', 'psutil']
 
 long_description = "See the repo readme for mor information"
 

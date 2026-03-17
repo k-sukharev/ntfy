@@ -1,16 +1,22 @@
-from os import makedirs, path
-from appdirs import user_config_dir
-from telegram_send import configure, send
-import asyncio
+import os
 
-config_dir = user_config_dir('ntfy', 'dschep')
-config_file = path.join(config_dir, 'telegram.ini')
+import telebot
+from telebot import apihelper
+
 
 def notify(title, message, retcode=None):
-    """Sends message over Telegram using telegram-send, title is ignored."""
-    if not path.exists(config_file):
-        if not path.exists(config_dir):
-            makedirs(config_dir)
-        print("Follow the instructions to configure the Telegram backend.\n")
-        asyncio.run(configure(config_file))
-    asyncio.run(send(messages=[message], conf=config_file))
+    token = os.environ.get('NTFY_TELEGRAM_TOKEN')
+    chat_id = os.environ.get('NTFY_TELEGRAM_CHAT_ID')
+    proxy = os.environ.get('NTFY_SOCKS_PROXY')
+
+    if not token or not chat_id:
+        raise ValueError(
+            'Set NTFY_TELEGRAM_TOKEN and NTFY_TELEGRAM_CHAT_ID '
+            'environment variables.'
+        )
+
+    if proxy:
+        apihelper.proxy = {'https': proxy}
+
+    bot = telebot.TeleBot(token)
+    bot.send_message(chat_id, message)

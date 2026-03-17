@@ -1,20 +1,13 @@
 import logging
 import os
 
-import sleekxmpp
+import slixmpp
 
 
-class NtfySendMsgBot(sleekxmpp.ClientXMPP):
-    """
-    Modified the commented sleekxmpp example:
-    http://sleekxmpp.com/getting_started/sendlogout.html
-
-    NOTE: supplying mtype='chat' was required for
-          Google Hangouts to work
-    """
+class NtfySendMsgBot(slixmpp.ClientXMPP):
 
     def __init__(self, jid, password, recipient, title, message, mtype=None):
-        super(NtfySendMsgBot, self).__init__(jid, password)
+        super().__init__(jid, password)
 
         self.recipient = recipient
         self.title = title
@@ -22,11 +15,15 @@ class NtfySendMsgBot(sleekxmpp.ClientXMPP):
         self.mtype = mtype
 
         self.add_event_handler("session_start", self.start)
+        self.add_event_handler("connection_failed", self.on_connection_failed)
 
-    def start(self, event):
+    def on_connection_failed(self, event):
+        logging.getLogger(__name__).error('XMPP connection failed')
+        self.disconnect(wait=0.0, reason='connection failed')
 
+    async def start(self, event):
         self.send_presence()
-        self.get_roster()
+        await self.get_roster()
         msg_args = {
             'mto': self.recipient,
             'msubject': self.title,
@@ -37,51 +34,38 @@ class NtfySendMsgBot(sleekxmpp.ClientXMPP):
 
         self.send_message(**msg_args)
 
-        self.disconnect(wait=True)
+        self.disconnect(wait=2.0)
 
 
 def notify(title,
            message,
-           jid,
-           password,
-           recipient,
+           jid=None,
+           password=None,
+           recipient=None,
            hostname=None,
            port=5222,
            path_to_certs=None,
            mtype=None,
            retcode=None):
-    """
-    Optional parameters
-        * ``hostname`` (if not from jid)
-        * ``port``
-        * ``path_to_certs``
-        * ``mtype`` ('chat' required for Google Hangouts)
+    jid = jid or os.environ.get('NTFY_XMPP_USER')
+    password = password or os.environ.get('NTFY_XMPP_PASSWORD')
+    recipient = recipient or os.environ.get('NTFY_XMPP_RECIPIENT')
 
-    To verify the SSL certificates offered by a server:
-    path_to_certs = "path/to/ca/cert"
-
-    Without dnspython library installed, you will need
-    to specify the server hostname if it doesn't match the jid.
-
-    For example, to use Google Talk you would need to use:
-    hostname = 'talk.google.com'
-
-    Specify port if other than 5222.
-    NOTE: Ignored without specified hostname
-    """
+    if not all([jid, password, recipient]):
+        raise ValueError(
+            'jid, password, and recipient are required. '
+            'Set via config or NTFY_XMPP_USER, NTFY_XMPP_PASSWORD, '
+            'NTFY_XMPP_RECIPIENT environment variables.'
+        )
 
     xmpp_bot = NtfySendMsgBot(jid, password, recipient, title, message, mtype)
-
-    # NOTE: Below plugins weren't needed for Google Hangouts
-    # but may be useful (from original sleekxmpp example)
-    # xmpp_bot.register_plugin('xep_0030') # Service Discovery
-    # xmpp_bot.register_plugin('xep_0199') # XMPP Ping
 
     if path_to_certs and os.path.isdir(path_to_certs):
         xmpp_bot.ca_certs = path_to_certs
 
-    # Connect to the XMPP server and start processing XMPP stanzas.
-    if xmpp_bot.connect(*([(hostname, int(port)) if hostname else []])):
-        xmpp_bot.process(block=True)
+    if hostname:
+        xmpp_bot.connect(host=hostname, port=int(port))
     else:
-        logging.getLogger(__name__).error('Unable to connect', exc_info=True)
+        xmpp_bot.connect()
+
+    xmpp_bot.loop.run_until_complete(xmpp_bot.disconnected)
